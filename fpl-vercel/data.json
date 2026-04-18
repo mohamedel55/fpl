@@ -1,0 +1,60 @@
+{
+  "gw": 34,
+  "deadline": "2025-04-25T11:00:00Z",
+  "updated": "April 17, 2025",
+  "captain":     { "name": "Salah",   "team": "LIV", "teamCode": 14, "form": "9.8", "price": "13.2", "owned": "78.4", "reason": "Double gameweek. Two chances to return. Liverpool face Brentford and Fulham. 12-18 pts expected with the armband." },
+  "transferIn":  { "name": "Palmer",  "team": "CHE", "teamCode": 8,  "form": "8.4", "price": "5.8",  "owned": "42.1", "reason": "Chelsea vs Leicester clean fixture. Palmer has direct contributions in 6 of last 7 GWs." },
+  "transferOut": { "name": "Haaland", "team": "MCI", "teamCode": 43, "form": "3.2", "price": "14.5", "owned": "61.8", "reason": "Man City face Arsenal away. Haaland blanked 4 of last 5. Sell now." },
+  "differential":{ "name": "Isak",   "team": "NEW", "teamCode": 4,  "form": "7.2", "price": "8.6",  "owned": "6.4",  "reason": "Newcastle home vs Everton. 5 goals in last 6 GWs. Only 6.4% owned." },
+  "topPlayers": [
+    { "name": "Salah",   "team": "LIV", "teamCode": 14, "pos": "MID", "form": "9.8", "price": "13.2", "owned": "78.4", "badge": "Captain",      "badgeClass": "bdg-g" },
+    { "name": "Palmer",  "team": "CHE", "teamCode": 8,  "pos": "MID", "form": "8.4", "price": "5.8",  "owned": "42.1", "badge": "Transfer In",  "badgeClass": "bdg-g" },
+    { "name": "Isak",    "team": "NEW", "teamCode": 4,  "pos": "FWD", "form": "7.2", "price": "8.6",  "owned": "6.4",  "badge": "Differential", "badgeClass": "bdg-b" },
+    { "name": "Saka",    "team": "ARS", "teamCode": 3,  "pos": "MID", "form": "7.6", "price": "9.9",  "owned": "38.2", "badge": "Watch",         "badgeClass": "bdg-o" },
+    { "name": "Mbeumo",  "team": "BRE", "teamCode": 94, "pos": "FWD", "form": "7.1", "price": "7.8",  "owned": "8.2",  "badge": "Watch",         "badgeClass": "bdg-o" }
+  ],
+  "fixtures": [
+    { "home": "LIV", "away": "BRE", "difficulty": 1 },
+    { "home": "CHE", "away": "LEI", "difficulty": 1 },
+    { "home": "NEW", "away": "EVE", "difficulty": 2 },
+    { "home": "ARS", "away": "TOT", "difficulty": 3 },
+    { "home": "AVL", "away": "WHU", "difficulty": 2 },
+    { "home": "TOT", "away": "BOU", "difficulty": 2 }
+  ],
+  "transfers": [
+    { "dir": "IN",  "name": "Salah",   "team": "LIV", "teamCode": 14, "pos": "MID", "form": "9.8", "reason": "Double GW - two games to score/assist. Must-own this week." },
+    { "dir": "IN",  "name": "Palmer",  "team": "CHE", "teamCode": 8,  "pos": "MID", "form": "8.4", "reason": "Best value mid in the game. Easy fixture and red-hot form." },
+    { "dir": "OUT", "name": "Haaland", "team": "MCI", "teamCode": 43, "pos": "FWD", "form": "3.2", "reason": "Arsenal away, out of form. Reinvest the budget into DGW assets." },
+    { "dir": "OUT", "name": "Watkins", "team": "AVL", "teamCode": 7,  "pos": "FWD", "form": "4.1", "reason": "Inconsistent returns. Upgrade to Isak or Mbeumo for better value." }
+  ],
+  "pitch": {
+    "formation": "4-3-3",
+    "gk":  [{ "name": "Flekken",   "teamCode": 94, "isGK": true,  "form": "6.2", "isCap": false }],
+    "def": [
+      { "name": "Trent",     "teamCode": 14, "isGK": false, "form": "7.8", "isCap": false },
+      { "name": "Porro",     "teamCode": 6,  "isGK": false, "form": "6.5", "isCap": false },
+      { "name": "Dunk",      "teamCode": 36, "isGK": false, "form": "6.0", "isCap": false },
+      { "name": "Mykolenko", "teamCode": 11, "isGK": false, "form": "5.8", "isCap": false }
+    ],
+    "mid": [
+      { "name": "Salah",  "teamCode": 14, "isGK": false, "form": "9.8", "isCap": true  },
+      { "name": "Palmer", "teamCode": 8,  "isGK": false, "form": "8.4", "isCap": false },
+      { "name": "Saka",   "teamCode": 3,  "isGK": false, "form": "7.6", "isCap": false }
+    ],
+    "fwd": [
+      { "name": "Isak",    "teamCode": 4,  "isGK": false, "form": "7.2", "isCap": false },
+      { "name": "Mbeumo",  "teamCode": 94, "isGK": false, "form": "7.1", "isCap": false },
+      { "name": "Watkins", "teamCode": 7,  "isGK": false, "form": "6.8", "isCap": false }
+    ]
+  },
+  "aiReport": [
+    { "type": "captain",  "title": "Captain Pick (Safe)",   "content": "Salah vs Brentford then Fulham\nDouble GW - two chances to haul\nExpected: 12-18 pts with armband\nLiverpool attacking at Anfield twice" },
+    { "type": "risky",    "title": "Captain Pick (Risky)",  "content": "Palmer vs Leicester\nChelsea best creative outlet in form\nExpected: 8-14 pts\n6 direct contributions in last 7 GWs" },
+    { "type": "vice",     "title": "Vice Captain",          "content": "Saka vs Wolves\nArsenal home - consistent threat\nSafe floor if Salah blanks\nGood returns all season" },
+    { "type": "transfer", "title": "Transfer Plan",         "content": "IN: Salah - Double GW must own\nIN: Palmer - Form and easy fixture\nOUT: Haaland - Arsenal away avoid\nOUT: Low form mid - upgrade now" },
+    { "type": "diff",     "title": "Differential Pick",     "content": "Isak (NEW) - only 6.4% owned\nNewcastle home vs Everton\n5 goals in last 6 GWs\nMassive rank upside this week" },
+    { "type": "danger",   "title": "Danger Zone",           "content": "Haaland - Arsenal away avoid\nDe Bruyne - rotation risk at MCI\nAny SOU player - relegated team\nAway fixtures vs top 6 this GW" },
+    { "type": "strategy", "title": "Strategy Advice",       "content": "Load up on Liverpool DGW assets\nSalah captain is non-negotiable\nIsak differential gives rank upside\nAvoid MCI players entirely this GW" },
+    { "type": "final",    "title": "Final Verdict",         "content": "Captain Salah. Transfer in Palmer.\nSell Haaland - price drop incoming.\nThis is the week to gain big rank." }
+  ]
+}
