@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FPL Edge — AI Gameweek Analysis</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#080c18;color:#fff;min-height:100vh}
+
+/* LOCK SCREEN */
+#lockScreen{display:flex;min-height:100vh;background:#080c18;align-items:center;justify-content:center;padding:20px}
+#homePage{display:none}
+#dashPage{display:none}
+
+/* TOPBAR */
+.topbar{background:#0f1729;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1a2540;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.logo-badge{background:#37c87a;color:#080c18;font-weight:900;font-size:14px;padding:4px 12px;border-radius:7px}
+.logo-text{font-size:17px;font-weight:700}
+.gw-pill{background:#37c87a15;border:1px solid #37c87a44;color:#37c87a;font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px}
+.enter-btn{background:#37c87a;color:#080c18;border:none;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer}
+.enter-btn:hover{background:#2db368}
+.top-btn{background:transparent;border:1px solid #1f2d4a;color:#8899bb;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px}
+.top-btn:hover{border-color:#37c87a;color:#37c87a}
+.top-btn.danger{color:#ef4444;border-color:#ef444433}
+.top-btn.danger:hover{border-color:#ef4444}
+
+/* BODIES */
+.home-body{padding:20px 24px;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.dash-body{padding:20px 24px;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+/* HERO */
+.hero{background:#0f1729;border-radius:14px;padding:22px 24px;border:1px solid #1a2540;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-tag{font-size:10px;color:#8899bb;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.hero-gw{font-size:22px;font-weight:700;margin-bottom:4px}
+.hero-dl{font-size:11px;color:#8899bb;margin-bottom:12px}
+.countdown{display:flex;align-items:center;gap:8px}
+.cd-block{background:#080c18;border:1px solid #1a2540;border-radius:8px;padding:10px 12px;text-align:center;min-width:52px}
+.cd-num{font-size:22px;font-weight:700;color:#37c87a;line-height:1}
+.cd-lbl{font-size:8px;color:#8899bb;margin-top:3px;font-weight:600;letter-spacing:1px}
+.cd-sep{font-size:18px;font-weight:700;color:#37c87a;margin-bottom:12px}
+.jerseys{display:flex;align-items:flex-end;gap:14px}
+.j-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.j-img{width:52px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.6))}
+.j-img.j-main{width:74px;filter:drop-shadow(0 0 14px #ffd70077) drop-shadow(0 3px 10px rgba(0,0,0,0.7))}
+.j-name{font-size:9px;font-weight:700;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:6px;white-space:nowrap;color:#fff}
+.j-name.j-cap{background:rgba(255,215,0,0.2);color:#ffd700}
+.j-pts{font-size:9px;color:#37c87a;font-weight:700}
+.j-pts.j-cap-pts{color:#ffd700}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.scard{background:#0f1729;border-radius:12px;padding:16px;border:1px solid #1a2540}
+.slabel{font-size:10px;color:#8899bb;margin-bottom:7px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.sval{font-size:20px;font-weight:700}
+.ssub{font-size:11px;color:#37c87a;margin-top:4px}
+.ssub.danger{color:#ef4444}
+
+/* PANELS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{background:#0f1729;border-radius:12px;padding:18px;border:1px solid #1a2540}
+.panel-title{font-size:12px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.pdot{width:7px;height:7px;border-radius:50%}
+
+/* PLAYER ROWS */
+.prow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1a254033}
+.prow:last-child{border-bottom:none}
+.pinfo{display:flex;align-items:center;gap:10px}
+.pj{width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));flex-shrink:0}
+.pname{font-size:13px;font-weight:700}
+.pdetail{font-size:10px;color:#8899bb;margin-top:1px}
+.pts{font-size:14px;font-weight:700;color:#37c87a}
+.bdg{font-size:9px;padding:3px 8px;border-radius:8px;font-weight:700}
+.bdg-g{background:#37c87a22;color:#37c87a;border:1px solid #37c87a44}
+.bdg-b{background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644}
+.bdg-o{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
+
+/* FIXTURE */
+.fix-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.fc{background:#080c18;border-radius:8px;padding:10px 6px;text-align:center;border:1px solid #1a2540}
+.fc-teams{font-size:9px;font-weight:700;margin-bottom:5px}
+.dbar{height:3px;border-radius:2px;width:70%;margin:0 auto 4px}
+.dlbl{font-size:9px;font-weight:700}
+
+/* TRANSFER ROWS */
+.trow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid #1a254033}
+.trow:last-child{border-bottom:none}
+.tj{width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.5))}
+.tout{font-size:12px;color:#ef4444;font-weight:700}
+.tin{font-size:12px;color:#37c87a;font-weight:700}
+.tarrow{font-size:14px;color:#37c87a;font-weight:700;flex-shrink:0}
+.treason{font-size:10px;color:#8899bb;margin-left:auto}
+
+/* PITCH */
+.pitch-wrap{background:#0f1729;border-radius:14px;padding:18px;border:1px solid #1a2540}
+.pitch{background:#1a6b3c;border-radius:10px;padding:16px 8px;display:flex;flex-direction:column;gap:16px;border:2px solid #2d8a52;position:relative;min-height:340px;justify-content:space-between}
+.pitch-line{position:absolute;top:50%;left:6%;width:88%;height:1px;background:rgba(255,255,255,0.12)}
+.pitch-circle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;border:1px solid rgba(255,255,255,0.12)}
+.pitch-box-t{position:absolute;top:0;left:25%;width:50%;height:16%;border:1px solid rgba(255,255,255,0.1);border-top:none}
+.pitch-box-b{position:absolute;bottom:0;left:25%;width:50%;height:16%;border:1px solid rgba(255,255,255,0.1);border-bottom:none}
+.pitch-row{display:flex;justify-content:space-around;align-items:center;z-index:2;position:relative}
+.pp-wrap{position:relative}
+.pp{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pp-jersey{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6))}
+.pp-jersey.cap-glow{filter:drop-shadow(0 0 10px #ffd700aa) drop-shadow(0 2px 6px rgba(0,0,0,0.6))}
+.pp-name{font-size:9px;font-weight:700;background:rgba(0,0,0,0.8);padding:2px 7px;border-radius:7px;white-space:nowrap;color:#fff}
+.pp-name.cap-name{background:rgba(255,215,0,0.2);color:#ffd700}
+.pp-form{font-size:9px;font-weight:700;color:#37c87a}
+.pp-form.cap-form{color:#ffd700}
+.cap-badge{position:absolute;top:-3px;right:-3px;background:#ffd700;color:#080c18;font-size:8px;font-weight:900;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:3}
+
+/* TRANSFER CARDS */
+.tc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tc{background:#0f1729;border-radius:14px;padding:18px;border:1px solid #1a2540;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;overflow:hidden}
+.tc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.tc-in::before{background:#37c87a}
+.tc-out::before{background:#ef4444}
+.tc-diff::before{background:#3b82f6}
+.tc-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.tc-jersey{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5))}
+.tc-name{font-size:15px;font-weight:700}
+.tc-team{font-size:11px;color:#8899bb}
+.tc-price{font-size:11px;color:#556080}
+.tc-form{font-size:13px;font-weight:700}
+.tc-reason{font-size:10px;color:#8899bb;text-align:center;line-height:1.5}
+.clr-g{color:#37c87a}.clr-r{color:#ef4444}.clr-b{color:#3b82f6}
+
+/* ===== PREMIUM AI CARDS ===== */
+.ai-box{background:#0f1729;border-radius:14px;padding:20px;border:1px solid #37c87a33}
+.ai-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.ai-tag{display:flex;align-items:center;gap:8px}
+.ai-dot{width:8px;height:8px;background:#37c87a;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.ai-lbl{font-size:12px;font-weight:700;color:#37c87a;letter-spacing:1px}
+.gen-btn{background:#37c87a;color:#080c18;border:none;padding:9px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
+.gen-btn:hover{background:#2db368}
+.gen-btn:disabled{opacity:0.5;cursor:not-allowed}
+.ai-note{font-size:11px;color:#37c87a;margin-top:12px}
+.ai-placeholder{font-size:14px;color:#8899bb;text-align:center;padding:20px 0}
+
+.ai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:4px}
+.ai-card{background:linear-gradient(145deg,#111827,#1a2540);border-radius:14px;padding:18px;color:#fff;font-size:13px;line-height:1.7;border:1px solid #1f2d4a;transition:transform 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
+.ai-card:hover{transform:translateY(-4px);box-shadow:0 10px 25px rgba(0,0,0,0.5)}
+.ai-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
+.ai-card h3{font-size:14px;margin-bottom:10px;font-weight:700}
+.ai-card p{margin:4px 0;color:#c8d8f0}
+.ai-card.captain::before{background:gold}
+.ai-card.risky::before{background:orange}
+.ai-card.vice::before{background:#00d4ff}
+.ai-card.transfer::before{background:#37c87a}
+.ai-card.diff::before{background:#9b5cff}
+.ai-card.danger::before{background:#ef4444}
+.ai-card.strategy::before{background:#ffaa00}
+.ai-card.final::before{background:#fff}
+
+/* SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #37c87a44;border-top-color:#37c87a;border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* LOADING SKELETON */
+.skeleton{background:linear-gradient(90deg,#1a2540 25%,#243050 50%,#1a2540 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;height:16px;margin:4px 0}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(max-width:900px){.stat-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.tc-grid{grid-template-columns:1fr}.fix-grid{grid-template-columns:repeat(2,1fr)}.hero{grid-template-columns:1fr}.jerseys{justify-content:center}.ai-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.stat-grid{grid-template-columns:1fr 1fr}.home-body,.dash-body{padding:12px}}
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div style="background:#0f1729;border:1px solid #1a2540;border-radius:20px;padding:36px;width:100%;max-width:440px;text-align:center">
+    <div style="margin-bottom:20px"><span style="background:#37c87a;color:#080c18;font-weight:900;font-size:16px;padding:6px 14px;border-radius:8px">FPL</span><span style="font-size:22px;font-weight:700;margin-left:8px">Edge</span></div>
+    <div style="font-size:11px;color:#37c87a;font-weight:600;letter-spacing:2px;margin-bottom:8px">PRO MEMBERSHIP</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:8px">AI Gameweek Analysis</div>
+    <div style="font-size:13px;color:#8899bb;margin-bottom:24px;line-height:1.7">Captain picks, transfers, differentials and AI analysis — every gameweek.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;text-align:left">
+      <div style="background:#080c18;border:1px solid #1a2540;border-radius:10px;padding:12px"><div style="font-size:10px;color:#37c87a;font-weight:700;margin-bottom:4px">CAPTAIN PICK</div><div style="font-size:12px;color:#ccc">Best pick every GW</div></div>
+      <div style="background:#080c18;border:1px solid #1a2540;border-radius:10px;padding:12px"><div style="font-size:10px;color:#3b82f6;font-weight:700;margin-bottom:4px">TRANSFERS</div><div style="font-size:12px;color:#ccc">In, out & differentials</div></div>
+      <div style="background:#080c18;border:1px solid #1a2540;border-radius:10px;padding:12px"><div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:4px">AI ANALYSIS</div><div style="font-size:12px;color:#ccc">Powered by Claude AI</div></div>
+      <div style="background:#080c18;border:1px solid #1a2540;border-radius:10px;padding:12px"><div style="font-size:10px;color:#ef4444;font-weight:700;margin-bottom:4px">FIXTURES</div><div style="font-size:12px;color:#ccc">Difficulty ratings</div></div>
+    </div>
+    <div id="promoTagLock" style="display:none;background:#f59e0b22;border:1px solid #f59e0b44;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#f59e0b;font-weight:600">🎉 Special offer for Reo Show community!</div>
+    <a id="accessBtnLock" href="https://ballmur.gumroad.com/l/FPLEdgePro" target="_blank" style="display:block;background:#37c87a;color:#080c18;padding:15px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:10px">Get Access — $5/month →</a>
+    <div id="trialNoteLock" style="font-size:11px;color:#8899bb;margin-bottom:20px">7-day free trial · Cancel anytime</div>
+    <div style="border-top:1px solid #1a2540;padding-top:18px">
+      <div style="font-size:12px;color:#8899bb;margin-bottom:8px">Already a member? Enter your password</div>
+      <input type="password" id="licenseInput" placeholder="Enter your access password..." style="width:100%;background:#080c18;border:1px solid #2a3a60;border-radius:8px;padding:11px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:10px;text-align:center">
+      <button onclick="submitLicense()" style="width:100%;background:transparent;border:1px solid #37c87a;color:#37c87a;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Unlock Access</button>
+      <div id="licenseError" style="font-size:11px;color:#ef4444;margin-top:8px;display:none">Invalid password. Check your email from Ballmur.</div>
+    </div>
+    <div style="font-size:10px;color:#556080;margin-top:14px">🔒 Password sent by email after payment.</div>
+  </div>
+</div>
+
+<!-- HOME PAGE -->
+<div id="homePage">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="logo-badge">FPL</span>
+      <span class="logo-text">Edge</span>
+      <div class="gw-pill" id="homeGwPill">Loading...</div>
+    </div>
+    <button class="enter-btn" id="enterBtn">Enter Dashboard →</button>
+  </div>
+  <div class="home-body">
+    <div class="hero">
+      <div>
+        <div class="hero-tag">Next deadline</div>
+        <div class="hero-gw" id="heroGwTitle">Loading...</div>
+        <div class="hero-dl">Deadline in</div>
+        <div class="countdown">
+          <div class="cd-block"><div class="cd-num" id="hd">--</div><div class="cd-lbl">DAYS</div></div>
+          <div class="cd-sep">:</div>
+          <div class="cd-block"><div class="cd-num" id="hh">--</div><div class="cd-lbl">HRS</div></div>
+          <div class="cd-sep">:</div>
+          <div class="cd-block"><div class="cd-num" id="hm">--</div><div class="cd-lbl">MIN</div></div>
+          <div class="cd-sep">:</div>
+          <div class="cd-block"><div class="cd-num" id="hs">--</div><div class="cd-lbl">SEC</div></div>
+        </div>
+      </div>
+      <div class="jerseys" id="homeJerseys">
+        <div class="j-wrap"><div style="width:52px;height:52px;background:#1a2540;border-radius:50%"></div><div class="j-name">...</div></div>
+        <div class="j-wrap"><div style="width:74px;height:74px;background:#1a2540;border-radius:50%"></div><div class="j-name j-cap">⭐ ...</div></div>
+        <div class="j-wrap"><div style="width:52px;height:52px;background:#1a2540;border-radius:50%"></div><div class="j-name">...</div></div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="scard"><div class="slabel">Best Captain</div><div class="sval" id="hCapName"><div class="skeleton" style="width:80px;height:24px"></div></div><div class="ssub" id="hCapSub"></div></div>
+      <div class="scard"><div class="slabel">Top Transfer In</div><div class="sval" id="hInName"><div class="skeleton" style="width:80px;height:24px"></div></div><div class="ssub" id="hInSub"></div></div>
+      <div class="scard"><div class="slabel">Transfer Out</div><div class="sval" id="hOutName"><div class="skeleton" style="width:80px;height:24px"></div></div><div class="ssub danger" id="hOutSub"></div></div>
+      <div class="scard"><div class="slabel">Differential</div><div class="sval" id="hDiffName"><div class="skeleton" style="width:80px;height:24px"></div></div><div class="ssub" id="hDiffSub"></div></div>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-title"><div class="pdot" style="background:#37c87a"></div>Top Players This GW</div>
+        <div id="homePlayers"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><div class="pdot" style="background:#f59e0b"></div>Fixture Difficulty</div>
+        <div class="fix-grid" id="homeFixtures"><div class="skeleton" style="height:60px"></div><div class="skeleton" style="height:60px"></div><div class="skeleton" style="height:60px"></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><div class="pdot" style="background:#3b82f6"></div>Suggested Transfers</div>
+      <div id="homeTransfers"><div class="skeleton"></div><div class="skeleton"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashPage">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="logo-badge">FPL</span>
+      <span class="logo-text">Edge</span>
+      <div class="gw-pill" id="dashGwPill">Loading...</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="top-btn" onclick="goHome()">← Home</button>
+      <button class="top-btn danger" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="pitch-wrap">
+      <div class="panel-title" style="margin-bottom:14px"><div class="pdot" style="background:#37c87a"></div>Captain Pick & Top XI</div>
+      <div class="pitch" id="pitch">
+        <div class="pitch-line"></div><div class="pitch-circle"></div>
+        <div class="pitch-box-t"></div><div class="pitch-box-b"></div>
+        <div class="pitch-row" id="row-fwd"></div>
+        <div class="pitch-row" id="row-mid"></div>
+        <div class="pitch-row" id="row-def"></div>
+        <div class="pitch-row" id="row-gk"></div>
+      </div>
+    </div>
+    <div class="panel-title"><div class="pdot" style="background:#3b82f6"></div>Transfer Recommendations</div>
+    <div class="tc-grid" id="transferCards"></div>
+    <div class="ai-box">
+      <div class="ai-head">
+        <div class="ai-tag"><div class="ai-dot"></div><div class="ai-lbl">AI ANALYSIS — GW REPORT</div></div>
+        <div class="ai-meta-lbl" id="aiMetaLbl" style="font-size:11px;color:#3d4f70;font-style:italic">Updated weekly by Ballmur</div>
+      </div>
+      <div id="aiContent"><div class="ai-placeholder">⏳ Loading AI report...</div></div>
+      <div class="ai-note" id="aiNote"></div>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-title"><div class="pdot" style="background:#37c87a"></div>Top Players This GW</div>
+        <div id="dashPlayers"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><div class="pdot" style="background:#f59e0b"></div>Fixture Difficulty</div>
+        <div class="fix-grid" id="dashFixtures"><div class="skeleton" style="height:60px"></div><div class="skeleton" style="height:60px"></div><div class="skeleton" style="height:60px"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentGW=33, cdInterval=null, fplLoaded=false;
+var summary={gw:33,captain:'',transferIn:'',transferOut:'',diff:'',topPlayers:'',fixtures:''};
+var TEAMS={1:'ARS',2:'AVL',3:'BOU',4:'BRE',5:'BHA',6:'CHE',7:'CRY',8:'EVE',9:'FUL',10:'IPS',11:'LEI',12:'LIV',13:'MCI',14:'MUN',15:'NEW',16:'NFO',17:'SOU',18:'TOT',19:'WHU',20:'WOL'};
+var TCODES={1:3,2:7,3:91,4:94,5:36,6:8,7:31,8:11,9:54,10:40,11:13,12:14,13:43,14:1,15:4,16:17,17:20,18:6,19:21,20:39};
+
+function jImg(tc,gk){return 'https://fantasy.premierleague.com/dist/img/shirts/standard/shirt_'+tc+(gk?'_1':'')+'-110.png';}
+
+/* ---- PROMO ---- */
+function checkPromo(){
+  var p=new URLSearchParams(window.location.search).get('promo');
+  if(p&&p.toUpperCase()==='REOSHOW') localStorage.setItem('fpl_promo','REOSHOW');
+  if(localStorage.getItem('fpl_promo')==='REOSHOW'){
+    var pt=document.getElementById('promoTagLock');
+    var ab=document.getElementById('accessBtnLock');
+    var tn=document.getElementById('trialNoteLock');
+    if(pt) pt.style.display='block';
+    if(ab){ab.textContent='Get Access — $3/month →';ab.href='https://ballmur.gumroad.com/l/FPLEdgePro?wanted=true&discount_code=REOSHOW';}
+    if(tn) tn.innerHTML='🎉 Reo Show price — <s style="color:#556080">$5</s> <strong style="color:#37c87a">$3/month</strong> · Cancel anytime';
+  }
+}
+
+/* ---- ACCESS ---- */
+function checkAccess(){
+  var saved=localStorage.getItem('fpl_pw')||localStorage.getItem('fpl_license');
+  if(saved==='000fpl26'){
+    document.getElementById('lockScreen').style.display='none';
+    document.getElementById('homePage').style.display='block';
+  } else {
+    document.getElementById('lockScreen').style.display='flex';
+    document.getElementById('homePage').style.display='none';
+    document.getElementById('dashPage').style.display='none';
+  }
+}
+
+function submitLicense(){
+  var pw=document.getElementById('licenseInput').value.trim();
+  var err=document.getElementById('licenseError');
+  if(pw==='000fpl26'){
+    localStorage.setItem('fpl_license',pw);
+    localStorage.setItem('fpl_pw',pw);
+    err.style.display='none';
+    document.getElementById('lockScreen').style.display='none';
+    document.getElementById('homePage').style.display='block';
+    loadAllData();
+  } else {
+    err.style.display='block';
+  }
+}
+document.getElementById('licenseInput').addEventListener('keydown',function(e){if(e.key==='Enter')submitLicense();});
+
+/* ---- NAVIGATION ---- */
+document.getElementById('enterBtn').addEventListener('click',function(){goDash();});
+function goHome(){document.getElementById('dashPage').style.display='none';document.getElementById('homePage').style.display='block';}
+function goDash(){document.getElementById('homePage').style.display='none';document.getElementById('dashPage').style.display='block';}
+function logout(){localStorage.removeItem('fpl_license');localStorage.removeItem('fpl_promo');document.getElementById('dashPage').style.display='none';document.getElementById('homePage').style.display='none';document.getElementById('lockScreen').style.display='flex';}
+
+/* ---- COUNTDOWN ---- */
+function startCountdown(dl){
+  if(cdInterval) clearInterval(cdInterval);
+  var d=dl?new Date(dl):new Date(Date.now()+3*86400000);
+  function tick(){
+    var diff=d-new Date();
+    if(diff<=0){clearInterval(cdInterval);return;}
+    document.getElementById('hd').textContent=String(Math.floor(diff/86400000)).padStart(2,'0');
+    document.getElementById('hh').textContent=String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+    document.getElementById('hm').textContent=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+    document.getElementById('hs').textContent=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+  }
+  tick(); cdInterval=setInterval(tick,1000);
+}
+
+/* ---- FPL DATA ---- */
+async function loadFPLData(){
+  var proxies=['https://corsproxy.io/?url=','https://api.allorigins.win/raw?url='];
+  for(var i=0;i<proxies.length;i++){
+    try{
+      var res=await fetch(proxies[i]+encodeURIComponent('https://fantasy.premierleague.com/api/bootstrap-static/'),{cache:'no-cache'});
+      if(!res.ok) continue;
+      var txt=await res.text();
+      if(!txt||txt.length<1000) continue;
+      var data=JSON.parse(txt);
+      if(!data.events||!data.elements||data.elements.length<400) continue;
+
+      // Get current GW (is_current first, then is_next)
+      var gwEvent=data.events.find(function(e){return e.is_current;});
+      if(!gwEvent) gwEvent=data.events.find(function(e){return e.is_next;});
+      if(!gwEvent) gwEvent=data.events.filter(function(e){return e.finished;}).pop();
+      var gwId=gwEvent?gwEvent.id:33;
+      currentGW=gwId;
+
+      document.getElementById('homeGwPill').textContent='Gameweek '+gwId;
+      document.getElementById('dashGwPill').textContent='Gameweek '+gwId;
+      document.getElementById('heroGwTitle').textContent='Gameweek '+gwId;
+      startCountdown(gwEvent?gwEvent.deadline_time:null);
+
+      var gwRes=await fetch(proxies[i]+encodeURIComponent('https://fantasy.premierleague.com/api/fixtures/?event='+gwId),{cache:'no-cache'});
+      if(!gwRes.ok) continue;
+      var fixTxt=await gwRes.text();
+      var fixtures=JSON.parse(fixTxt);
+      if(!fixtures||!fixtures.length) continue;
+
+      renderAll(data,fixtures,gwId);
+      fplLoaded=true;
+      return;
+    }catch(e){continue;}
+  }
+  // Fallback: use latest GW data without fixtures
+  console.log('Using mock data');
+  mockData();
+}
+
+/* ---- RENDER ALL ---- */
+function renderAll(data,fixtures,gw){
+  // STRICT filter: only available PL players with recent minutes
+  var players=data.elements.filter(function(p){
+    return p.status==='a' &&
+           p.minutes>90 &&
+           parseFloat(p.form)>2 &&
+           p.team>=1 && p.team<=20 &&
+           p.now_cost>0;
+  });
+  players.sort(function(a,b){return parseFloat(b.form)-parseFloat(a.form);});
+
+  var top=players.slice(0,20);
+  var cap=top[0], tin=top[1];
+  var diff=players.filter(function(p){return parseFloat(p.selected_by_percent)<12&&parseFloat(p.form)>4;}).sort(function(a,b){return parseFloat(b.form)-parseFloat(a.form);})[0]||top[8];
+  var tout=players.filter(function(p){return parseFloat(p.selected_by_percent)>25&&parseFloat(p.form)<4;}).sort(function(a,b){return parseFloat(a.form)-parseFloat(b.form);})[0]||top[12];
+
+  // Update stat cards
+  document.getElementById('hCapName').textContent=cap?cap.web_name:'—';
+  document.getElementById('hCapSub').textContent=cap?'Form: '+cap.form+' | £'+(cap.now_cost/10).toFixed(1)+'m':'';
+  document.getElementById('hInName').textContent=tin?tin.web_name:'—';
+  document.getElementById('hInSub').textContent=tin?'Form: '+tin.form+' | £'+(tin.now_cost/10).toFixed(1)+'m':'';
+  document.getElementById('hOutName').textContent=tout?tout.web_name:'—';
+  document.getElementById('hOutSub').textContent=tout?'Low form — consider selling':'';
+  document.getElementById('hDiffName').textContent=diff?diff.web_name:'—';
+  document.getElementById('hDiffSub').textContent=diff?parseFloat(diff.selected_by_percent).toFixed(1)+'% owned':'';
+
+  // Jerseys
+  var capTc=TCODES[cap?cap.team:12]||14;
+  var tinTc=TCODES[tin?tin.team:6]||8;
+  var diffTc=TCODES[diff?diff.team:15]||4;
+  document.getElementById('homeJerseys').innerHTML=
+    '<div class="j-wrap"><img class="j-img" src="'+jImg(tinTc,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="j-name">'+(tin?tin.web_name:'')+'</div><div class="j-pts">'+(tin?tin.form:'')+'</div></div>'+
+    '<div class="j-wrap"><img class="j-img j-main" src="'+jImg(capTc,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="j-name j-cap">⭐ '+(cap?cap.web_name:'')+'</div><div class="j-pts j-cap-pts">'+(cap?cap.form:'')+'</div></div>'+
+    '<div class="j-wrap"><img class="j-img" src="'+jImg(diffTc,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="j-name">'+(diff?diff.web_name:'')+'</div><div class="j-pts">'+(diff?diff.form:'')+'</div></div>';
+
+  // Players list
+  var badges=[{t:'Captain',c:'bdg-g'},{t:'Transfer In',c:'bdg-g'},{t:'Differential',c:'bdg-b'},{t:'Watch',c:'bdg-o'},{t:'Watch',c:'bdg-o'}];
+  var playersHtml=top.slice(0,5).map(function(p,i){
+    var tc=TCODES[p.team]||1;
+    return '<div class="prow"><div class="pinfo"><img class="pj" src="'+jImg(tc,false)+'" onerror="this.style.display=\'none\'" alt=""><div><div class="pname">'+p.web_name+'</div><div class="pdetail">'+(TEAMS[p.team]||'')+' · £'+(p.now_cost/10).toFixed(1)+'m · '+parseFloat(p.selected_by_percent).toFixed(1)+'% owned</div></div></div><div style="display:flex;align-items:center;gap:7px"><span class="bdg '+badges[i].c+'">'+badges[i].t+'</span><span class="pts">'+p.form+'</span></div></div>';
+  }).join('');
+  document.getElementById('homePlayers').innerHTML=playersHtml;
+  document.getElementById('dashPlayers').innerHTML=playersHtml;
+
+  // Fixtures
+  var fixHtml=fixtures.slice(0,6).map(function(f){
+    var d=f.team_h_difficulty,color=d<=2?'#37c87a':d===3?'#f59e0b':'#ef4444',label=d<=2?'Easy':d===3?'Medium':'Hard';
+    return '<div class="fc"><div class="fc-teams">'+(TEAMS[f.team_h]||'?')+' v '+(TEAMS[f.team_a]||'?')+'</div><div class="dbar" style="background:'+color+'"></div><div class="dlbl" style="color:'+color+'">'+label+'</div></div>';
+  }).join('');
+  document.getElementById('homeFixtures').innerHTML=fixHtml;
+  document.getElementById('dashFixtures').innerHTML=fixHtml;
+
+  // Transfers home
+  var transfers=[{out:tout,inn:tin,r:'Better fixture + form'},{out:top[5],inn:diff,r:'Differential + home game'}];
+  document.getElementById('homeTransfers').innerHTML=transfers.map(function(t){
+    if(!t.out||!t.inn) return '';
+    var outTc=TCODES[t.out.team]||1,inTc=TCODES[t.inn.team]||1;
+    return '<div class="trow"><img class="tj" src="'+jImg(outTc,false)+'" onerror="this.style.display=\'none\'" alt=""><span class="tout">'+t.out.web_name+'</span><span class="tarrow">→</span><img class="tj" src="'+jImg(inTc,false)+'" onerror="this.style.display=\'none\'" alt=""><span class="tin">'+t.inn.web_name+'</span><span class="treason">'+t.r+'</span></div>';
+  }).join('');
+
+  // Pitch
+  renderPitch(top.slice(0,11));
+
+  // Transfer cards
+  document.getElementById('transferCards').innerHTML=
+    tcCard(tin,'tc-in','Transfer In','clr-g','Best form + easy fixture this GW')+
+    tcCard(tout,'tc-out','Transfer Out','clr-r','Low form — consider selling now')+
+    tcCard(diff,'tc-diff','Differential','clr-b','Low ownership, high upside pick');
+
+  // Summary for AI
+  summary={gw:gw,captain:cap?cap.web_name:'',transferIn:tin?tin.web_name:'',transferOut:tout?tout.web_name:'',diff:diff?diff.web_name:'',
+    topPlayers:top.slice(0,6).map(function(p){return p.web_name+'(form:'+p.form+',£'+(p.now_cost/10).toFixed(1)+'m,'+parseFloat(p.selected_by_percent).toFixed(0)+'%owned)';}).join(', '),
+    fixtures:fixtures.slice(0,6).map(function(f){var d=f.team_h_difficulty;return (TEAMS[f.team_h]||'?')+' vs '+(TEAMS[f.team_a]||'?')+'(diff:'+(d<=2?'Easy':d===3?'Med':'Hard')+')';}).join(', ')
+  };
+
+  // Load cached AI
+  var cached=localStorage.getItem('fpl_ai_gw'+gw);
+  if(cached){renderAICards(JSON.parse(cached));document.getElementById('aiNote').textContent='✓ Cached analysis for GW'+gw+' — click to regenerate';}
+}
+
+function tcCard(p,cls,label,colorCls,reason){
+  if(!p) return '';
+  var tc=TCODES[p.team]||1;
+  return '<div class="tc '+cls+'"><div class="tc-label '+colorCls+'">'+label+'</div><img class="tc-jersey" src="'+jImg(tc,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="tc-name">'+p.web_name+'</div><div class="tc-team">'+(TEAMS[p.team]||'')+'</div><div class="tc-price">£'+(p.now_cost/10).toFixed(1)+'m · '+parseFloat(p.selected_by_percent).toFixed(1)+'% owned</div><div class="tc-form '+colorCls+'">Form: '+p.form+'</div><div class="tc-reason">'+reason+'</div></div>';
+}
+
+function renderPitch(players){
+  var byPos={1:[],2:[],3:[],4:[]};
+  players.forEach(function(p){if(byPos[p.element_type])byPos[p.element_type].push(p);});
+  [1,2,3,4].forEach(function(pos){byPos[pos].sort(function(a,b){return parseFloat(b.form)-parseFloat(a.form);});});
+  var gk=byPos[1].slice(0,1),defs=byPos[2].slice(0,4),mids=byPos[3].slice(0,4),fwds=byPos[4].slice(0,2);
+  var all=[].concat(fwds,mids,defs,gk);
+  var cap=all.sort(function(a,b){return parseFloat(b.form)-parseFloat(a.form);})[0];
+  function ppHtml(p,isCap){
+    var tc=TCODES[p.team]||1,gk=p.element_type===1;
+    return '<div class="pp-wrap">'+(isCap?'<div class="cap-badge">C</div>':'')+'<div class="pp"><img class="pp-jersey'+(isCap?' cap-glow':'')+'" src="'+jImg(tc,gk)+'" onerror="this.style.display=\'none\'" alt=""><div class="pp-name'+(isCap?' cap-name':'')+'">'+p.web_name+'</div><div class="pp-form'+(isCap?' cap-form':'')+'">'+p.form+'</div></div></div>';
+  }
+  document.getElementById('row-gk').innerHTML=gk.map(function(p){return ppHtml(p,cap&&p.id===cap.id);}).join('');
+  document.getElementById('row-def').innerHTML=defs.map(function(p){return ppHtml(p,cap&&p.id===cap.id);}).join('');
+  document.getElementById('row-mid').innerHTML=mids.map(function(p){return ppHtml(p,cap&&p.id===cap.id);}).join('');
+  document.getElementById('row-fwd').innerHTML=fwds.map(function(p){return ppHtml(p,cap&&p.id===cap.id);}).join('');
+}
+
+/* ---- AI CARDS ---- */
+function renderAICards(sections){
+  var types=['captain','risky','vice','transfer','diff','danger','strategy','final'];
+  var html=sections.map(function(s,i){
+    return '<div class="ai-card '+(types[i]||'captain')+'"><h3>'+s.title+'</h3>'+s.content.split('\n').map(function(l){return l.trim()?'<p>'+l+'</p>':''}).join('')+'</div>';
+  }).join('');
+  document.getElementById('aiContent').innerHTML='<div class="ai-grid">'+html+'</div>';
+}
+
+/* ---- GENERATE AI ---- */
+document.getElementById('genBtn').addEventListener('click',async function(){
+  var btn=document.getElementById('genBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> Generating...';
+  document.getElementById('aiContent').innerHTML='<div class="ai-placeholder"><span class="spin"></span> Analyzing GW'+currentGW+' data...</div>';
+  document.getElementById('aiNote').textContent='';
+
+  var prompt=`You are a high-level Fantasy Premier League (FPL) expert giving premium paid advice.
+
+GW${summary.gw} LIVE DATA:
+- Best captain: ${summary.captain}
+- Top transfer in: ${summary.transferIn}  
+- Consider selling: ${summary.transferOut}
+- Differential: ${summary.diff}
+- Top form players: ${summary.topPlayers}
+- Key fixtures: ${summary.fixtures}
+
+Return ONLY a valid JSON array with exactly 8 objects. Each object has "title" and "content" keys.
+The 8 sections must be in this exact order:
+1. "🏆 Captain Pick (Safe)" - reliable pick, expected points range
+2. "🔥 Captain Pick (Risky)" - differential captain, high upside
+3. "🥈 Vice Captain" - safe backup
+4. "🔄 Transfer Plan" - 2 in, 2 out with reasons
+5. "💎 Differential Pick" - under 15% ownership with upside
+6. "⚠️ Danger Zone" - players to avoid, rotation risks
+7. "🧠 Strategy" - play safe or take risks this GW
+8. "📊 Final Verdict" - 2-line action plan
+
+Rules:
+- Only mention real current Premier League players
+- Be sharp and specific, no generic advice
+- Think like a top 10k FPL manager
+- Return ONLY the JSON array, no other text`;
+
+  try{
+    var res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,password:'000fpl26'})});
+    var raw=await res.text();
+    if(!raw||!raw.trim()){document.getElementById('aiContent').innerHTML='<div class="ai-placeholder">Empty response. Try again.</div>';btn.disabled=false;btn.textContent='Generate GW Report';return;}
+    var d=JSON.parse(raw);
+    if(d.error){document.getElementById('aiContent').innerHTML='<div class="ai-placeholder">Error: '+d.error+'</div>';btn.disabled=false;btn.textContent='Generate GW Report';return;}
+    if(d.content&&d.content[0]&&d.content[0].text){
+      var txt=d.content[0].text.trim();
+      // Parse JSON response
+      var jsonStr=txt.replace(/```json|```/g,'').trim();
+      var sections=JSON.parse(jsonStr);
+      renderAICards(sections);
+      localStorage.setItem('fpl_ai_gw'+currentGW,JSON.stringify(sections));
+      document.getElementById('aiNote').textContent='✓ Analysis saved for GW'+currentGW+' — cached for all subscribers this week';
+    } else {
+      document.getElementById('aiContent').innerHTML='<div class="ai-placeholder">Could not generate. Try again.</div>';
+    }
+  }catch(e){
+    document.getElementById('aiContent').innerHTML='<div class="ai-placeholder">Error: '+e.message+'</div>';
+  }
+  btn.disabled=false;
+  btn.textContent='Generate GW Report';
+});
+
+/* ---- MOCK DATA ---- */
+function mockData(){
+  currentGW=33;
+  document.getElementById('homeGwPill').textContent='Gameweek 33';
+  document.getElementById('dashGwPill').textContent='Gameweek 33';
+  document.getElementById('heroGwTitle').textContent='Gameweek 33';
+  startCountdown(null);
+  document.getElementById('hCapName').textContent='Salah';document.getElementById('hCapSub').textContent='Form: 9.8 | £13.2m';
+  document.getElementById('hInName').textContent='Palmer';document.getElementById('hInSub').textContent='Form: 8.4 | £5.8m';
+  document.getElementById('hOutName').textContent='Haaland';document.getElementById('hOutSub').textContent='Low form — consider selling';
+  document.getElementById('hDiffName').textContent='Isak';document.getElementById('hDiffSub').textContent='6.4% owned';
+  document.getElementById('homeJerseys').innerHTML='<div class="j-wrap"><img class="j-img" src="'+jImg(8,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="j-name">Palmer</div><div class="j-pts">8.4</div></div><div class="j-wrap"><img class="j-img j-main" src="'+jImg(14,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="j-name j-cap">⭐ Salah</div><div class="j-pts j-cap-pts">9.8</div></div><div class="j-wrap"><img class="j-img" src="'+jImg(4,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="j-name">Isak</div><div class="j-pts">7.2</div></div>';
+  var ph='<div class="prow"><div class="pinfo"><img class="pj" src="'+jImg(14,false)+'" onerror="this.style.display=\'none\'" alt=""><div><div class="pname">Salah</div><div class="pdetail">LIV · £13.2m · 78% owned</div></div></div><div style="display:flex;align-items:center;gap:7px"><span class="bdg bdg-g">Captain</span><span class="pts">9.8</span></div></div><div class="prow"><div class="pinfo"><img class="pj" src="'+jImg(8,false)+'" onerror="this.style.display=\'none\'" alt=""><div><div class="pname">Palmer</div><div class="pdetail">CHE · £5.8m · 42% owned</div></div></div><div style="display:flex;align-items:center;gap:7px"><span class="bdg bdg-g">Transfer In</span><span class="pts">8.4</span></div></div><div class="prow"><div class="pinfo"><img class="pj" src="'+jImg(4,false)+'" onerror="this.style.display=\'none\'" alt=""><div><div class="pname">Isak</div><div class="pdetail">NEW · £8.6m · 6.4% owned</div></div></div><div style="display:flex;align-items:center;gap:7px"><span class="bdg bdg-b">Differential</span><span class="pts">7.2</span></div></div>';
+  document.getElementById('homePlayers').innerHTML=ph;
+  document.getElementById('dashPlayers').innerHTML=ph;
+  var fh='<div class="fc"><div class="fc-teams">LIV v FUL</div><div class="dbar" style="background:#37c87a"></div><div class="dlbl" style="color:#37c87a">Easy</div></div><div class="fc"><div class="fc-teams">CHE v MCI</div><div class="dbar" style="background:#ef4444"></div><div class="dlbl" style="color:#ef4444">Hard</div></div><div class="fc"><div class="fc-teams">NEW v EVE</div><div class="dbar" style="background:#37c87a"></div><div class="dlbl" style="color:#37c87a">Easy</div></div><div class="fc"><div class="fc-teams">ARS v TOT</div><div class="dbar" style="background:#ef4444"></div><div class="dlbl" style="color:#ef4444">Hard</div></div><div class="fc"><div class="fc-teams">AVL v WHU</div><div class="dbar" style="background:#37c87a"></div><div class="dlbl" style="color:#37c87a">Easy</div></div><div class="fc"><div class="fc-teams">TOT v BOU</div><div class="dbar" style="background:#f59e0b"></div><div class="dlbl" style="color:#f59e0b">Medium</div></div>';
+  document.getElementById('homeFixtures').innerHTML=fh;
+  document.getElementById('dashFixtures').innerHTML=fh;
+  document.getElementById('homeTransfers').innerHTML='<div class="trow"><img class="tj" src="'+jImg(43,false)+'" onerror="this.style.display=\'none\'" alt=""><span class="tout">Haaland</span><span class="tarrow">→</span><img class="tj" src="'+jImg(8,false)+'" onerror="this.style.display=\'none\'" alt=""><span class="tin">Palmer</span><span class="treason">Better fixture + form</span></div><div class="trow"><img class="tj" src="'+jImg(1,false)+'" onerror="this.style.display=\'none\'" alt=""><span class="tout">Low form mid</span><span class="tarrow">→</span><img class="tj" src="'+jImg(4,false)+'" onerror="this.style.display=\'none\'" alt=""><span class="tin">Isak</span><span class="treason">Differential + home</span></div>';
+  var mockAll=[{id:1,web_name:'Salah',team:12,element_type:3,form:'9.8'},{id:2,web_name:'Palmer',team:6,element_type:3,form:'8.4'},{id:3,web_name:'Isak',team:15,element_type:4,form:'7.2'},{id:4,web_name:'Saka',team:1,element_type:3,form:'7.8'},{id:5,web_name:'Trent',team:12,element_type:2,form:'6.5'},{id:6,web_name:'Porro',team:18,element_type:2,form:'6.0'},{id:7,web_name:'Rashford',team:14,element_type:3,form:'6.8'},{id:8,web_name:'Dunk',team:5,element_type:2,form:'5.5'},{id:9,web_name:'Mykolenko',team:8,element_type:2,form:'5.0'},{id:10,web_name:'Watkins',team:2,element_type:4,form:'6.0'},{id:11,web_name:'Flekken',team:4,element_type:1,form:'5.0'}];
+  renderPitch(mockAll);
+  document.getElementById('transferCards').innerHTML='<div class="tc tc-in"><div class="tc-label clr-g">Transfer In</div><img class="tc-jersey" src="'+jImg(8,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="tc-name">Palmer</div><div class="tc-team">Chelsea</div><div class="tc-price">£5.8m · 42% owned</div><div class="tc-form clr-g">Form: 8.4</div><div class="tc-reason">Best form + easy fixture</div></div><div class="tc tc-out"><div class="tc-label clr-r">Transfer Out</div><img class="tc-jersey" src="'+jImg(43,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="tc-name">Haaland</div><div class="tc-team">Man City</div><div class="tc-price">£14.5m · 62% owned</div><div class="tc-form clr-r">Form: 4.2</div><div class="tc-reason">Tough fixture — sell</div></div><div class="tc tc-diff"><div class="tc-label clr-b">Differential</div><img class="tc-jersey" src="'+jImg(4,false)+'" onerror="this.style.display=\'none\'" alt=""><div class="tc-name">Isak</div><div class="tc-team">Newcastle</div><div class="tc-price">£8.6m · 6.4% owned</div><div class="tc-form clr-b">Form: 7.2</div><div class="tc-reason">Only 6.4% owned</div></div>';
+  summary={gw:33,captain:'Salah',transferIn:'Palmer',transferOut:'Haaland',diff:'Isak',topPlayers:'Salah(form:9.8,£13.2m,78%owned), Palmer(form:8.4,£5.8m,42%owned), Isak(form:7.2,£8.6m,6%owned)',fixtures:'LIV vs FUL(Easy), CHE vs MCI(Hard), NEW vs EVE(Easy), ARS vs TOT(Hard)'};
+  var cached=localStorage.getItem('fpl_ai_gw33');
+  if(cached){try{renderAICards(JSON.parse(cached));document.getElementById('aiNote').textContent='✓ Cached for GW33';}catch(e){}}
+}
+
+window.onload=function(){
+  checkPromo();
+  checkAccess();
+  var license=localStorage.getItem('fpl_pw')||localStorage.getItem('fpl_license');
+  if(license==='000fpl26') loadAllData();
+};
+
+async function loadAllData(){
+  // Load data.json (zero credits - just a static file!)
+  try{
+    var r=await fetch('data.json?v='+Date.now(),{cache:'no-cache'});
+    if(!r.ok) throw new Error('data.json missing');
+    var d=await r.json();
+    renderFromJSON(d);
+  }catch(e){
+    console.error('Could not load data.json:',e);
+    html('aiContent','<div class="ai-placeholder">Could not load data. Please refresh.</div>');
+  }
+  // Also try to load live FPL data for jerseys/fixtures
+  loadFPLData();
+}
+
+function renderFromJSON(d){
+  var gw=d.gw;
+  ['hGwPill','dGwPill'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent='GW'+gw;});
+  var gt=document.getElementById('hGwTitle');if(gt)gt.textContent='Gameweek '+gw;
+  if(d.deadline) startCountdown(d.deadline);
+
+  // Stat cards
+  if(d.captain){
+    var c=d.captain;
+    document.getElementById('hCap').textContent=c.name;
+    document.getElementById('hCapS').textContent='Form: '+c.form+' | £'+c.price+'m';
+  }
+  if(d.transferIn){
+    var t=d.transferIn;
+    document.getElementById('hIn').textContent=t.name;
+    document.getElementById('hInS').textContent='Form: '+t.form+' | £'+t.price+'m';
+  }
+  if(d.transferOut){
+    document.getElementById('hOut').textContent=d.transferOut.name;
+    document.getElementById('hOutS').textContent='Low form — consider selling';
+  }
+  if(d.differential){
+    document.getElementById('hDiff').textContent=d.differential.name;
+    document.getElementById('hDiffS').textContent=d.differential.owned+'% owned';
+  }
+
+  // Jerseys
+  if(d.captain&&d.transferIn&&d.differential){
+    var capTc=d.captain.teamCode||14;
+    var tinTc=d.transferIn.teamCode||8;
+    var diffTc=d.differential.teamCode||4;
+    html('homeJerseys',
+      '<div class="j-wrap"><img class="j-img" src="'+jImg(tinTc,false)+'" onerror="this.style.display='none'" alt=""><div class="j-name">'+d.transferIn.name+'</div><div class="j-pts">'+d.transferIn.form+'</div></div>'+
+      '<div class="j-wrap"><img class="j-img j-main" src="'+jImg(capTc,false)+'" onerror="this.style.display='none'" alt=""><div class="j-name j-cap">⭐ '+d.captain.name+'</div><div class="j-pts j-cap-pts">'+d.captain.form+'</div></div>'+
+      '<div class="j-wrap"><img class="j-img" src="'+jImg(diffTc,false)+'" onerror="this.style.display='none'" alt=""><div class="j-name">'+d.differential.name+'</div><div class="j-pts">'+d.differential.form+'</div></div>'
+    );
+  }
+
+  // Top players
+  if(d.topPlayers){
+    var ph=d.topPlayers.map(function(p){
+      return '<div class="prow"><div class="pinfo"><img class="pj" src="'+jImg(p.teamCode||1,false)+'" onerror="this.style.display='none'" alt=""><div><div class="pname">'+p.name+'</div><div class="pdetail">'+p.team+' · £'+p.price+'m · '+p.owned+'% owned</div></div></div><div style="display:flex;align-items:center;gap:7px"><span class="bdg '+p.badgeClass+'">'+p.badge+'</span><span class="pts">'+p.form+'</span></div></div>';
+    }).join('');
+    html('homePlayers',ph); html('dashPlayers',ph);
+  }
+
+  // Fixtures
+  if(d.fixtures){
+    var fh=d.fixtures.map(function(f){
+      var diff=f.difficulty,color=diff<=2?'#37c87a':diff===3?'#f59e0b':'#ef4444',label=diff<=2?'Easy':diff===3?'Medium':'Hard';
+      return '<div class="fc"><div class="fc-teams">'+f.home+' v '+f.away+'</div><div class="dbar" style="background:'+color+'"></div><div class="dlbl" style="color:'+color+'">'+label+'</div></div>';
+    }).join('');
+    html('homeFixtures',fh); html('dashFixtures',fh);
+  }
+
+  // Transfers home
+  if(d.transfers){
+    var ins=d.transfers.filter(function(t){return t.dir==='IN';});
+    var outs=d.transfers.filter(function(t){return t.dir==='OUT';});
+    var pairs=[];
+    for(var i=0;i<Math.min(ins.length,outs.length);i++) pairs.push({out:outs[i],inn:ins[i]});
+    html('homeTransfers',pairs.map(function(t){
+      return '<div class="trow"><img class="tj" src="'+jImg(t.out.teamCode||1,false)+'" onerror="this.style.display='none'" alt=""><span class="tout">'+t.out.name+'</span><span class="tarrow">→</span><img class="tj" src="'+jImg(t.inn.teamCode||1,false)+'" onerror="this.style.display='none'" alt=""><span class="tin">'+t.inn.name+'</span><span class="treason">'+t.inn.reason+'</span></div>';
+    }).join(''));
+  }
+
+  // Pitch from JSON
+  if(d.pitch){
+    var fp=document.getElementById('formPill')||document.getElementById('formationEl');
+    if(fp) fp.textContent=d.pitch.formation||'4-3-3';
+    function pitchRow(players){
+      if(!players||!players.length) return '';
+      return players.map(function(p){
+        var isC=p.isCap;
+        return '<div class="pp-wrap">'+(isC?'<div class="cap-badge">C</div>':'')+'<div class="pp"><img class="pp-jersey'+(isC?' cap-glow':'')+'" src="'+jImg(p.teamCode,p.isGK)+'" onerror="this.style.display='none'" alt=""><div class="pp-name'+(isC?' cap-name':'')+'">'+p.name+'</div><div class="pp-form'+(isC?' cap-form':'')+'">'+p.form+'</div></div></div>';
+      }).join('');
+    }
+    html('row-gk',pitchRow(d.pitch.gk));
+    html('row-def',pitchRow(d.pitch.def));
+    html('row-mid',pitchRow(d.pitch.mid));
+    html('row-fwd',pitchRow(d.pitch.fwd));
+  }
+
+  // Transfer cards
+  if(d.captain&&d.transferIn&&d.transferOut&&d.differential){
+    html('transferCards',
+      tcCard(d.transferIn,'tc-in','Transfer In','clr-g','Best form + easy fixture this GW')+
+      tcCard(d.transferOut,'tc-out','Transfer Out','clr-r','Low form — consider selling now')+
+      tcCard(d.differential,'tc-diff','Differential','clr-b','Low ownership, high upside pick')
+    );
+  }
+
+  // AI Report from JSON
+  if(d.aiReport&&d.aiReport.length){
+    var cards=d.aiReport.map(function(s){
+      return '<div class="ai-card '+s.type+'"><h3>'+s.title+'</h3>'+
+        s.content.split('\n').filter(function(l){return l.trim();}).map(function(l){return '<p>'+l+'</p>';}).join('')+
+        '</div>';
+    }).join('');
+    html('aiContent','<div class="ai-grid">'+cards+'</div>');
+    var note=document.getElementById('aiNote');
+    if(note) note.textContent='✓ AI Report for GW'+gw+' — Updated '+d.updated;
+    var meta=document.getElementById('aiMetaLbl');
+    if(meta) meta.textContent='Updated '+d.updated;
+  }
+}
+</script>
+</body>
+</html>
